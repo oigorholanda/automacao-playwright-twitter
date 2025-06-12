@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "googleapis": "^150.0.1",
+    "playwright": "^1.53.0"
+  },
+  "name": "buyticket---twitter-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
