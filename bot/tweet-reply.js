@@ -58,7 +58,7 @@ async function replyTweet(browser, link) {
 
     await page.waitForLoadState('networkidle', { timeout: 15000 });
 
-    await DELAY(2000, 4000);
+    await DELAY(3000, 5000);
     await page.goto(link.link, { timeout: 30000, waitUntil: 'load' });
 
     await DELAY(2000, 5000);
@@ -84,7 +84,7 @@ async function replyTweet(browser, link) {
   }
 }
 
-// Roda o processo completo
+// Rodar o processo completo
 (async () => {
   const auth = await authorizeGoogle();
   const links = await readLinks(auth);

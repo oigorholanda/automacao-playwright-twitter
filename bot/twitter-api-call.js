@@ -1,6 +1,6 @@
 const { TwitterApi } = require('twitter-api-v2');
 // Importa a biblioteca TwitterApi para interagir com a API do Twitter
-// Certifique-se de instalar a biblioteca com: npm install twitter-api-v2
+// Necessário instalar a biblioteca com: npm install twitter-api-v2
 
 
 // Credenciais obtidas no portal de desenvolvedores ao criar um app no developer.twitter.com

@@ -19,7 +19,7 @@ https://twitter.com/intent/tweet?in_reply_to={tweet_id}&text={mensagem}
 
 2. **Instale as dependências:**
 
-    ```js
+    ```bash
     npm install
     ```
 
@@ -39,14 +39,14 @@ https://twitter.com/intent/tweet?in_reply_to={tweet_id}&text={mensagem}
 
 ## ▶️ Execução
 ```bash
-node tweet-reply.js
+npm start
 ```
 
 O script:
 
 - Lê os links da planilha do Google Sheets que não estão marcados como respondidos.
 
-- Acessa os links de resposta do Twitter com Playwright.
+- Loga e acessa os links de resposta no Twitter com Playwright.
 
 - Responde ao tweet de forma humanizada.
 
@@ -54,8 +54,8 @@ O script:
 
 
 ## 🛠️ Decisões Técnicas
-✅ **Playwright**: browser control realista para simular um humano  
-✅ **Google Sheets API**: persistência de status e lista dinâmica de links  
+✅ **Playwright**: browser control realista para simular comportamento humano  
+✅ **Google Sheets API**: controle de status e lista dinâmica de links  
 ✅ **Delays aleatórios**: simula pausas humanas entre ações  
 ✅ **Execução sequencial**: evita problemas de login/sessão  
 ✅ **Fail-safe**: links com erro são ignorados, sem parar o fluxo
