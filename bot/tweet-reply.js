@@ -1,13 +1,17 @@
 import { chromium } from 'playwright';
+import fs from 'fs/promises';
 import dotenv from 'dotenv';
 import { google } from 'googleapis';
 
 dotenv.config();
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
-const DELAY = (min, max) => new Promise(res => setTimeout(res, Math.floor(Math.random() * (max - min) + min)));
+const COOKIE_FILE = 'twitter-auth.json';
 
-// Google Sheets Auth
+const DELAY = (min, max) =>
+  new Promise(res => setTimeout(res, Math.floor(Math.random() * (max - min) + min)));
+
+// Autenticação Google
 async function authorizeGoogle() {
   const auth = new google.auth.GoogleAuth({
     keyFile: 'credentials.json',
@@ -16,7 +20,7 @@ async function authorizeGoogle() {
   return await auth.getClient();
 }
 
-// Lê os links da planilha
+// Lê os links válidos da planilha
 async function readLinks(auth) {
   const sheets = google.sheets({ version: 'v4', auth });
   const res = await sheets.spreadsheets.values.get({
@@ -44,41 +48,57 @@ async function markAsResponded(auth, rowIndex) {
   });
 }
 
-// Ação principal de reply via Playwright
-async function replyTweet(browser, link) {
-  const page = await browser.newPage();
+// Envia o tweet via botão ou fallback
+async function sendTweet(page) {
+  await DELAY(2000, 5000);
+
   try {
-    await page.goto('https://twitter.com/login');
-    await page.waitForTimeout(2000);
-    await page.fill('input[name="text"]', process.env.TWITTER_USER);
-    await page.keyboard.press('Enter');
-    await page.waitForTimeout(2000);
-    await page.fill('input[name="password"]', process.env.TWITTER_PASS);
-    await page.keyboard.press('Enter');
+    await page.click('button[data-testid="tweetButton"]');
+    console.log('✅ Tweet enviado via botão');
+  } catch {
+    console.warn('⚠️ Botão não encontrado, usando fallback Ctrl+Enter');
+    await page.keyboard.press('Control+Enter');
+  }
 
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
+  await DELAY(3000, 5000);
+}
 
-    await DELAY(3000, 5000);
+// Verifica se foi carregado o modal de resposta corretamente
+async function isReplyLoaded(page) {
+  try {
+    await page.waitForSelector('div[aria-labelledby="modal-header"]', {
+      timeout: 10000,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+
+// Ação principal de resposta
+async function replyTweet(context, link) {
+  const page = await context.newPage();
+  try {
     await page.goto(link.link, { timeout: 30000, waitUntil: 'load' });
 
-    await DELAY(2000, 5000);
+    // Aguarda renderização total dos componentes por segurança
+    await DELAY(2000, 4000);
 
-    const tweetButton = page.locator('div[data-testid="tweetButton"]');
-
-    try {
-      await tweetButton.waitFor({ timeout: 15000 });
-      await tweetButton.click();
-      console.log('✅ Tweet enviado via botão');
-    } catch (err) {
-      console.warn('⚠️ Usando envio fallback Ctrl+Enter');
-      await page.keyboard.press('Control+Enter');
+    // Verifica o componente de resposta da sessão
+    const loaded = await isReplyLoaded(page);
+    if (!loaded) {
+      console.error('🔒 Resposta inválida! Por algum motivo o modal de reply não carregou corretamente');
+      await page.close();
+      return false;
     }
 
-    await DELAY(3000, 5000);
+
+    await sendTweet(page);
     await page.close();
     return true;
   } catch (err) {
-    console.error(`Erro ao responder ${link.link}`, err);
+    console.error(`❌ Erro ao responder: ${link.link}`, err);
     await page.close();
     return false;
   }
@@ -89,15 +109,26 @@ async function replyTweet(browser, link) {
   const auth = await authorizeGoogle();
   const links = await readLinks(auth);
   const browser = await chromium.launch({ headless: false });
+  let context;
+
+  try {
+    const storage = await fs.readFile(COOKIE_FILE, 'utf-8');
+    context = await browser.newContext({ storageState: JSON.parse(storage) });
+    console.log('🔓 Sessão carregada de twitter-auth.json');
+  } catch {
+    console.error('❌ Nenhum login detectado! Execute primeiro: node bot/save-cookies.js');
+    await browser.close();
+    process.exit(1);
+  }
 
   for (const link of links) {
     console.log(`🔁 Processando linha ${link.rowIndex}`);
-    const ok = await replyTweet(browser, link);
+    const ok = await replyTweet(context, link);
     if (ok) {
       await markAsResponded(auth, link.rowIndex);
       console.log(`✅ Respondido (linha ${link.rowIndex})`);
     } else {
-      console.log(`⚠️ Pulado (erro ao enviar reply)`);
+      console.log(`⚠️ Falha ao responder (linha ${link.rowIndex}`);
     }
     await DELAY(3000, 8000);
   }
