@@ -84,7 +84,7 @@ async function replyTweet(browser, link) {
   const browser = await chromium.launch({ headless: false });
 
   for (const link of links) {
-    console.log(`🔁 Processando linha ${link.rowIndex}:`, link.link);
+    console.log(`🔁 Processando linha ${link.rowIndex}`);
     const ok = await replyTweet(browser, link);
     if (ok) {
       await markAsResponded(auth, link.rowIndex);
