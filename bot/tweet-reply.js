@@ -1,5 +1,4 @@
 import { chromium } from 'playwright';
-import fs from 'fs/promises';
 import dotenv from 'dotenv';
 import { google } from 'googleapis';
 
@@ -63,9 +62,17 @@ async function replyTweet(browser, link) {
     await page.goto(link.link, { timeout: 30000, waitUntil: 'load' });
 
     await DELAY(2000, 5000);
-    await page.click('div[aria-label="Tweet"]');
-    await DELAY(1000, 3000);
-    await page.keyboard.press('Control+Enter');
+
+    const tweetButton = page.locator('div[data-testid="tweetButton"]');
+
+    try {
+      await tweetButton.waitFor({ timeout: 15000 });
+      await tweetButton.click();
+      console.log('✅ Tweet enviado via botão');
+    } catch (err) {
+      console.warn('⚠️ Usando envio fallback Ctrl+Enter');
+      await page.keyboard.press('Control+Enter');
+    }
 
     await DELAY(3000, 5000);
     await page.close();
