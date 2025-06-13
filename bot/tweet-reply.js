@@ -22,26 +22,30 @@ async function readLinks(auth) {
   const sheets = google.sheets({ version: 'v4', auth });
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: 'Envio Plyright - igor!G2:H',
+    range: 'Envio Plyright - igor!A2:K',
   });
 
   return res.data.values
-    .map((row, i) => ({ url: row[0], status: row[1], index: i + 2 }))
-    .filter(r => !r.status || r.status !== true);
+    .map((row, i) => ({
+      link: row[6],        // Coluna G
+      check: row[7],       // Coluna H
+      rowIndex: i + 2,     // índice da linha real
+    }))
+    .filter(r => r.link && (!r.check || r.check.toUpperCase() !== 'TRUE'));
 }
 
-// Atualiza a planilha com status
-async function markAsResponded(auth, row) {
+// Marca como respondido na coluna K
+async function markAsResponded(auth, rowIndex) {
   const sheets = google.sheets({ version: 'v4', auth });
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID,
-    range: `Envio Plyright - igor!K${row}`,
+    range: `Envio Plyright - igor!K${rowIndex}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [['Respondido via Playwright']] },
   });
 }
 
-// Ação principal com Playwright
+// Ação principal de reply via Playwright
 async function replyTweet(browser, link) {
   const page = await browser.newPage();
   try {
@@ -53,10 +57,10 @@ async function replyTweet(browser, link) {
     await page.fill('input[name="password"]', process.env.TWITTER_PASS);
     await page.keyboard.press('Enter');
 
-    await page.waitForNavigation({ timeout: 15000 });
+    await page.waitForLoadState('networkidle', { timeout: 15000 });
 
     await DELAY(2000, 4000);
-    await page.goto(link.url, { timeout: 30000, waitUntil: 'load' });
+    await page.goto(link.link, { timeout: 30000, waitUntil: 'load' });
 
     await DELAY(2000, 5000);
     await page.click('div[aria-label="Tweet"]');
@@ -67,7 +71,7 @@ async function replyTweet(browser, link) {
     await page.close();
     return true;
   } catch (err) {
-    console.error(`Erro ao responder ${link.url}`, err);
+    console.error(`Erro ao responder ${link.link}`, err);
     await page.close();
     return false;
   }
@@ -80,9 +84,14 @@ async function replyTweet(browser, link) {
   const browser = await chromium.launch({ headless: false });
 
   for (const link of links) {
-    console.log('Processando:', link.url);
+    console.log(`🔁 Processando linha ${link.rowIndex}:`, link.link);
     const ok = await replyTweet(browser, link);
-    if (ok) await markAsResponded(auth, link.index);
+    if (ok) {
+      await markAsResponded(auth, link.rowIndex);
+      console.log(`✅ Respondido (linha ${link.rowIndex})`);
+    } else {
+      console.log(`⚠️ Pulado (erro ao enviar reply)`);
+    }
     await DELAY(3000, 8000);
   }
 
