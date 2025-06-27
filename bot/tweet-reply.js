@@ -25,24 +25,30 @@ async function readLinks(auth) {
   const sheets = google.sheets({ version: 'v4', auth });
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: 'Envio Plyright - igor!A2:K',
+    range: 'Controle!A2:AA',
   });
 
   return res.data.values
     .map((row, i) => ({
-      link: row[6],        // Coluna G
-      check: row[7],       // Coluna H
-      rowIndex: i + 2,     // índice da linha real
+      rowIndex: i + 2,
+      link: row[26],     // Coluna AA
+      check: row[2],    // Coluna C
     }))
-    .filter(r => r.link && (!r.check || r.check.toUpperCase() !== 'TRUE'));
+    .filter(r =>
+      r.rowIndex >= 404 && // filtro de linhas
+      r.link &&
+      r.check &&
+      r.check.toUpperCase() === 'NAO'
+    )
+    .slice(0, 5); // limite de resultados
 }
 
-// Marca como respondido na coluna K
+// Marca como respondido na coluna C
 async function markAsResponded(auth, rowIndex) {
   const sheets = google.sheets({ version: 'v4', auth });
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID,
-    range: `Envio Plyright - igor!K${rowIndex}`,
+    range: `Controle!C${rowIndex}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [['Respondido via Playwright']] },
   });

@@ -17,16 +17,22 @@ async function readLinks(auth) {
   const sheets = google.sheets({ version: 'v4', auth });
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: 'Envio Plyright - igor!A2:K',
+    range: 'Controle!A2:AA',
   });
 
   return res.data.values
     .map((row, i) => ({
       rowIndex: i + 2,
-      link: row[6],     // Coluna G
-      check: row[7],    // Coluna H
+      link: row[26],     // Coluna AA
+      check: row[2],    // Coluna C
     }))
-    .filter(r => r.link && (!r.check || r.check.toUpperCase() !== 'TRUE'));
+    .filter(r =>
+      r.rowIndex >= 404 && // ignora linhas antes da 408
+      r.link &&
+      r.check &&
+      r.check.toUpperCase() === 'NAO'
+    )
+    .slice(0, 3); // ✅ limita a 3 resultados
 }
 
 (async () => {
@@ -34,7 +40,7 @@ async function readLinks(auth) {
     const auth = await authorizeGoogle();
     const links = await readLinks(auth);
     console.log('✅ Links válidos encontrados:', links.length);
-    console.table(links);
+    console.table(links.slice(0, 10)); // Exibe os primeiros 10 links para validação
   } catch (err) {
     console.error('❌ Erro ao acessar Google Sheets:', err.message);
   }

@@ -20,14 +20,14 @@ async function markAsResponded(auth, rowIndex) {
   const sheets = google.sheets({ version: 'v4', auth });
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID,
-    range: `Envio Plyright - igor!K${rowIndex}`,
+    range: `Controle!C${rowIndex}`,
     valueInputOption: 'USER_ENTERED',
-    requestBody: { values: [['Respondido via Playwright (TESTE)']] },
+    requestBody: { values: [['Respondido via Playwright']] },
   });
   console.log(`✅ Linha ${rowIndex} atualizada com sucesso`);
 }
 
-const rowToTest = 20; // 🧪 Altere conforme necessário
+const rowToTest = 342; // 🧪 Altere conforme necessário
 
 authorizeGoogle()
   .then(auth => markAsResponded(auth, rowToTest))
