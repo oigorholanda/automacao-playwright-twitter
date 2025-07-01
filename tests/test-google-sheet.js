@@ -27,12 +27,11 @@ async function readLinks(auth) {
       check: row[2],    // Coluna C
     }))
     .filter(r =>
-      r.rowIndex >= 404 && // ignora linhas antes da 408
+      r.rowIndex >= 417 && // ignora linhas antes da digitada
       r.link &&
       r.check &&
       r.check.toUpperCase() === 'NAO'
     )
-    .slice(0, 3); // ✅ limita a 3 resultados
 }
 
 (async () => {

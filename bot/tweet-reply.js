@@ -35,22 +35,39 @@ async function readLinks(auth) {
       check: row[2],    // Coluna C
     }))
     .filter(r =>
-      r.rowIndex >= 404 && // filtro de linhas
+      r.rowIndex >= 417 && // filtro de linhas
       r.link &&
       r.check &&
       r.check.toUpperCase() === 'NAO'
     )
-    .slice(0, 5); // limite de resultados
+    .slice(0, 100); // limite de resultados
 }
 
-// Marca como respondido na coluna C
+function formatarDataHora() {
+  const now = new Date();
+  return now.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+// Marca como respondido nas colunas C e D
 async function markAsResponded(auth, rowIndex) {
   const sheets = google.sheets({ version: 'v4', auth });
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID,
-    range: `Controle!C${rowIndex}`,
+    range: `Controle!C${rowIndex}:D${rowIndex}`, // C e D na mesma linha
     valueInputOption: 'USER_ENTERED',
-    requestBody: { values: [['Respondido via Playwright']] },
+    requestBody: {
+      values: [[
+        'Respondido via Playwright',
+        formatarDataHora()
+      ]]
+    },
   });
 }
 
